@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "enhancedentities",
+  "version": "${version}",
+
+  "name": "EnhancedEntities",
+  "description": "This mod lets create multiple entities with differents Textures/Models without lagging the game!",
+  "authors": [
+    "KyoSleep"
+  ],
+  "contact": {
+    "discord": "KyoSleep#6920"
+  },
+
+  "license": "MIT",
+  "icon": "assets/enhancedentities/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.sleep.enhancedentities.Main"
+    ]
+  },
+  "mixins": [
+    "enhancedentities.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.14.9",
+    "fabric-api": "*",
+    "minecraft": "~1.19",
+    "java": ">=17"
+  },
+  "suggests": {
+    "another-mod": "*"
+  }
+}
