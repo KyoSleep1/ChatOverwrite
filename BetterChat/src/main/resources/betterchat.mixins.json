@@ -6,7 +6,8 @@
   "mixins": [
   ],
   "client": [
-    "MixinTest"
+    "client.ChatComponentMixin",
+    "client.ChatListenerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
