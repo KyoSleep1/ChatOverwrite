@@ -3,6 +3,7 @@ package dev.sleep.betterchat.mixin.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
+import dev.sleep.betterchat.client.chat.gui.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
@@ -48,6 +49,12 @@ public abstract class ChatComponentMixin {
     @Shadow
     protected abstract int getLineHeight();
 
+    @Shadow
+    protected abstract int getTagIconLeft(GuiMessage.Line line);
+
+    private final ChatButton EDIT_BUTTON = new ChatButton(2, 2, 19, 2, 11, 12),
+            DELETE_BUTTON = new ChatButton(0, 0, 0, 0, 0, 0);
+
     /**
      * @author KyoSleep
      * @reason Draw Edit/Delete button during message rendering, also, deletes message safety icon indicator
@@ -74,7 +81,7 @@ public abstract class ChatComponentMixin {
         int l = Mth.ceil((float) chatComponent.getWidth() / f);
 
         poseStack.pushPose();
-        poseStack.translate(4.0, 8.0, 0.0);
+        poseStack.translate(2.0, 8.0, 0.0);
         poseStack.scale(f, f, 1.0f);
 
         double d = this.minecraft.options.chatOpacity().get() * (double) 0.9f + (double) 0.1f;
@@ -104,14 +111,18 @@ public abstract class ChatComponentMixin {
             v = (int) ((double) u + h);
 
             poseStack.pushPose();
-            poseStack.translate(0.0, 0.0, 50.0);
 
+            poseStack.translate(0.0, 0.0, 50.0);
             ChatComponent.fill(poseStack, -4, u - m, l + 8, u, s << 24);
-            RenderSystem.enableBlend();
-            poseStack.translate(0.0, 0.0, 50.0);
 
+            int x = getTagIconLeft(line);
+            int y = v + this.minecraft.font.lineHeight;
+
+            this.renderButtons(line, poseStack, x, y);
+            RenderSystem.enableBlend();
+
+            poseStack.translate(0.0, 0.0, 50.0);
             this.minecraft.font.drawShadow(poseStack, line.content(), 0.0f, (float) v, 0xFFFFFF + (r << 24));
-            this.renderButtons(line);
 
             RenderSystem.disableBlend();
             poseStack.popPose();
@@ -157,21 +168,29 @@ public abstract class ChatComponentMixin {
         poseStack.popPose();
     }
 
-    private void renderButtons(GuiMessage.Line line) {
+    private void renderButtons(GuiMessage.Line line, PoseStack poseStack, int positionX, int positionY) {
         String legibleText = this.getLegibleText(line.content());
+
         if (!ClientChatHandler.isMessageOwner(legibleText)) {
             return;
         }
 
-        renderEditButton();
-        renderDeleteButton();
+
+        poseStack.pushPose();
+        poseStack.scale(0.7F, 0.7F, 0.7F);
+
+        renderEditButton(poseStack, positionX, positionY);
+        renderDeleteButton(poseStack, positionX, positionY);
+
+        poseStack.popPose();
     }
 
-    private void renderEditButton() {
+    private void renderEditButton(PoseStack poseStack, int positionX, int positionY) {
+        EDIT_BUTTON.render(poseStack, positionX, positionY - (EDIT_BUTTON.getHeight()) - 1, false);
     }
 
-    private void renderDeleteButton() {
-
+    private void renderDeleteButton(PoseStack poseStack, int positionX, int positionY) {
+        //DELETE_BUTTON.render(poseStack, positionX, positionY - (DELETE_BUTTON.getHeight() - 1), false);
     }
 
     private String getLegibleText(FormattedCharSequence charSequence) {
