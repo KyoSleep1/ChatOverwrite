@@ -26,12 +26,16 @@ public class ChatButton {
         this.Height = height;
     }
 
-    public void render(PoseStack poseStack, int positionX, int positionY, boolean isHovered){
-        if(isHovered){
+    public void render(PoseStack poseStack, int positionX, int positionY){
+        if(this.isHovered()){
             GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, HOVER_U, HOVER_V, WIDTH, Height, TEXTURE_SIZE);
             return;
         }
 
         GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, DEFAULT_U, DEFAULT_V, WIDTH, Height, TEXTURE_SIZE);
+    }
+
+    public boolean isHovered(){
+        return false;
     }
 }

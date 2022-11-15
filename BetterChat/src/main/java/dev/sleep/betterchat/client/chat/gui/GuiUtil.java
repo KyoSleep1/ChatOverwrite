@@ -30,7 +30,7 @@ public class GuiUtil {
 
     public static void drawTexture(ResourceLocation resourceLocation, PoseStack poseStack, int positionX, int positionY, int u, int v, int width, int height, int textureSize) {
         GuiUtil.bindTexture(resourceLocation);
-        GuiComponent.blit(poseStack, positionX, positionY, u, v, width, height, textureSize, textureSize);
+        GuiComponent.blit(poseStack, positionX, positionY,  u, v, width, height, textureSize, textureSize);
     }
 
     public static void bindTexture(ResourceLocation resourceLocation) {
