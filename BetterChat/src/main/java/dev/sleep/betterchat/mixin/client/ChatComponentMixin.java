@@ -175,14 +175,8 @@ public abstract class ChatComponentMixin {
             return;
         }
 
-
-        poseStack.pushPose();
-        poseStack.scale(0.7F, 0.7F, 0.7F);
-
         renderEditButton(poseStack, positionX, positionY);
         renderDeleteButton(poseStack, positionX, positionY);
-
-        poseStack.popPose();
     }
 
     private void renderEditButton(PoseStack poseStack, int positionX, int positionY) {
