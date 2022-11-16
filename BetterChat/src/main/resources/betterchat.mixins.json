@@ -7,7 +7,8 @@
   ],
   "client": [
     "client.ChatComponentMixin",
-    "client.ChatListenerMixin"
+    "client.ChatListenerMixin",
+    "client.MinecraftMixin"
   ],
   "injectors": {
     "defaultRequire": 1

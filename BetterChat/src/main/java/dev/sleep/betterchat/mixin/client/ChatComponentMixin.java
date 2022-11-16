@@ -7,12 +7,14 @@ import dev.sleep.betterchat.client.chat.gui.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
@@ -45,12 +47,12 @@ public abstract class ChatComponentMixin {
     @Shadow
     protected abstract int getLineHeight();
 
-    private final ChatButton EDIT_BUTTON = new ChatButton(2, 2, 19, 2, 11, 12),
-            DELETE_BUTTON = new ChatButton(2, 18, 18, 18, 12, 12);
+    private final ChatButton EDIT_BUTTON = new ChatButton(2, 18, 18, 18, 12, 12),
+            DELETE_BUTTON = new ChatButton(2, 2, 19, 2, 11, 12);
 
     /**
      * @author KyoSleep
-     * @reason Draw Edit/Delete button during message rendering, remove Scroll Indicator (It's ugly) and Safety Icon indicator
+     * @reason Draw Edit/Delete button during message rendering, remove Scroll Indicator (It's ugly) and Message Safety Icon indicator
      * (It's useless and scares people)
      */
     @Overwrite
@@ -68,11 +70,11 @@ public abstract class ChatComponentMixin {
         double chatSpacing = this.minecraft.options.chatLineSpacing().get();
 
         poseStack.pushPose();
-
         poseStack.scale(guiScale, guiScale, 1.0F);
+        poseStack.translate(2.0, 8.0, 0.0);
+
         renderMessages(poseStack, this.trimmedMessages.size(), this.getLinesPerPage(), this.getLineHeight(), chatWidthBasedOnScale, chatOpacityFactor,
                 textBackgroundOpacity, chatSpacing, this.isChatFocused(), tickCount);
-
         poseStack.popPose();
     }
 
@@ -102,50 +104,46 @@ public abstract class ChatComponentMixin {
             int lineMaxHeight = -visibleMessageIndex * lineHeight;
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
 
-            poseStack.pushPose();
             RenderSystem.enableBlend();
-
+            poseStack.pushPose();
             poseStack.translate(0.0, 0.0, 50.0);
-            ChatComponent.fill(poseStack, -4, lineMaxHeight - lineHeight, chatWidthBasedOnScale + 8, lineMaxHeight, backgroundOpacityColor << 24);
 
-            poseStack.translate(0.0, 0.0, 50.0);
+            ChatComponent.fill(poseStack, -4, (lineMaxHeight - lineHeight), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
+            if (shouldRenderButtons(visibleMessage)) {
+                renderButtons(poseStack, visibleMessageIndex, textPositionY);
+                poseStack.translate(10.0, 0.0, 50.0);
+            }
+
             this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), 0.0f, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
-
-            RenderSystem.disableBlend();
             poseStack.popPose();
-
-            renderButtons(visibleMessage, poseStack);
+            RenderSystem.disableBlend();
         }
     }
 
-    private void renderButtons(GuiMessage.Line visibleMessage, PoseStack poseStack) {
-        if (!shouldRenderButtons(visibleMessage)) {
-            return;
-        }
-
+    private void renderButtons(PoseStack poseStack, int visibleMessageIndex, int textPositionY) {
         poseStack.pushPose();
-        poseStack.scale(0.8F, 0.8F, 1.0F);
+        poseStack.scale(0.6100F, 0.6100F, 1.0F);
 
-        DELETE_BUTTON.render(poseStack, 20, 20);
-        EDIT_BUTTON.render(poseStack, 20, 20);
+        poseStack.translate(10.0F, 10.0F, 50.0F);
+        poseStack.translate(0.0F, textPositionY, 0.0F);
+
+        DELETE_BUTTON.render(poseStack, -10, calculateIconSpacing(visibleMessageIndex));
+        EDIT_BUTTON.render(poseStack, 20, -14);
 
         poseStack.popPose();
     }
 
-    private boolean shouldRenderButtons(GuiMessage.Line line) {
-        String legibleText = this.getLegibleText(line.content());
-        return ClientChatHandler.isMessageOwner(legibleText);
+    @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
+    public void clearOwnerList(boolean clearSentMsgHistory, CallbackInfo ci){
+        ClientChatHandler.clearOwnerList();
     }
 
-    private String getLegibleText(FormattedCharSequence charSequence) {
-        StringBuilder stringBuilder = new StringBuilder();
+    private int calculateIconSpacing(int messageIndex){
+        return -15 - (messageIndex * 6);
+    }
 
-        charSequence.accept((index, style, codePoints) -> {
-            stringBuilder.appendCodePoint(codePoints);
-            return true;
-        });
-
-        return stringBuilder.toString();
+    private boolean shouldRenderButtons(GuiMessage.Line line) {
+        return ClientChatHandler.isMessageOwner(line.content());
     }
 
     private static double getTimeFactor(int i) {
