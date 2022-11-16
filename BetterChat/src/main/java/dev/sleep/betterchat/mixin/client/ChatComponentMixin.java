@@ -102,6 +102,8 @@ public abstract class ChatComponentMixin {
 
             double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
             int lineMaxHeight = -visibleMessageIndex * lineHeight;
+
+            float textPositionX = 0.0F;
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
 
             RenderSystem.enableBlend();
@@ -110,11 +112,11 @@ public abstract class ChatComponentMixin {
 
             ChatComponent.fill(poseStack, -4, (lineMaxHeight - lineHeight), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
             if (shouldRenderButtons(visibleMessage)) {
+                textPositionX = 20.0F;
                 renderButtons(poseStack, visibleMessageIndex, textPositionY);
-                poseStack.translate(10.0, 0.0, 50.0);
             }
 
-            this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), 0.0f, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
+            this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), textPositionX, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
             poseStack.popPose();
             RenderSystem.disableBlend();
         }
@@ -128,7 +130,7 @@ public abstract class ChatComponentMixin {
         poseStack.translate(0.0F, textPositionY, 0.0F);
 
         DELETE_BUTTON.render(poseStack, -10, calculateIconSpacing(visibleMessageIndex));
-        EDIT_BUTTON.render(poseStack, 20, -14);
+        EDIT_BUTTON.render(poseStack, 5, calculateIconSpacing(visibleMessageIndex));
 
         poseStack.popPose();
     }
