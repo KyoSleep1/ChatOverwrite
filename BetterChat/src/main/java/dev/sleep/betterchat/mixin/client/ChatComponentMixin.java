@@ -74,12 +74,12 @@ public abstract class ChatComponentMixin {
         poseStack.scale(guiScale, guiScale, 1.0F);
         poseStack.translate(2.0, 8.0, 0.0);
 
-        renderMessages(poseStack, this.trimmedMessages.size(), this.getLinesPerPage(), this.getLineHeight(), chatWidthBasedOnScale, chatOpacityFactor,
+        renderMessages(poseStack, guiScale, this.trimmedMessages.size(), this.getLinesPerPage(), this.getLineHeight(), chatWidthBasedOnScale, chatOpacityFactor,
                 textBackgroundOpacity, chatSpacing, this.isChatFocused(), tickCount);
         poseStack.popPose();
     }
 
-    private void renderMessages(PoseStack poseStack, int visibleMessagesSize, int linesPerPage, int lineHeight, int chatWidthBasedOnScale,
+    private void renderMessages(PoseStack poseStack, float guiScale, int visibleMessagesSize, int linesPerPage, int lineHeight, int chatWidthBasedOnScale,
                                 double chatOpacityFactor, double textBackgroundOpacity, double chatSpacing, boolean chatFocused, int tickCount) {
         for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < visibleMessagesSize &&
                 visibleMessageIndex < linesPerPage; visibleMessageIndex++) {
@@ -114,7 +114,7 @@ public abstract class ChatComponentMixin {
             ChatComponent.fill(poseStack, -4, (lineMaxHeight - lineHeight), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
             if (shouldRenderButtons(visibleMessage)) {
                 textPositionX = 20.0F;
-                renderButtons(poseStack, visibleMessageIndex, textPositionY);
+                renderButtons(poseStack, guiScale, visibleMessageIndex, textPositionY);
             }
 
             this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), textPositionX, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
@@ -123,15 +123,12 @@ public abstract class ChatComponentMixin {
         }
     }
 
-    private void renderButtons(PoseStack poseStack, int visibleMessageIndex, int textPositionY) {
+    private void renderButtons(PoseStack poseStack, float guiScale, int visibleMessageIndex, int textPositionY) {
         poseStack.pushPose();
         poseStack.scale(0.6100F, 0.6100F, 1.0F);
 
-        poseStack.translate(10.0F, 10.0F, 50.0F);
-        poseStack.translate(0.0F, textPositionY, 0.0F);
-
-        DELETE_BUTTON.render(poseStack, -10, calculateIconSpacing(visibleMessageIndex));
-        EDIT_BUTTON.render(poseStack, 5, calculateIconSpacing(visibleMessageIndex));
+        DELETE_BUTTON.render(poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
+        EDIT_BUTTON.render(poseStack, guiScale, 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
 
         poseStack.popPose();
     }
