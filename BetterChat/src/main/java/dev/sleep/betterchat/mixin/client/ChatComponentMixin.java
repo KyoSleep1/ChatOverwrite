@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
@@ -138,6 +139,14 @@ public abstract class ChatComponentMixin {
     @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
     public void clearOwnerList(boolean clearSentMsgHistory, CallbackInfo ci){
         ClientChatHandler.clearOwnerList();
+    }
+
+    @ModifyArg(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/StringSplitter;componentStyleAtWidth(Lnet/minecraft/util/FormattedCharSequence;I)Lnet/minecraft/network/chat/Style;"),
+            method = "getClickedComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;",
+            index = 1
+    )
+    public int correctClickPosition(int x) {
+        return x - 18;
     }
 
     private int calculateIconSpacing(int messageIndex){
