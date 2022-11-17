@@ -3,8 +3,8 @@ package dev.sleep.betterchat.client.chat.gui.widget;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.Reference;
 import dev.sleep.betterchat.client.chat.gui.GuiUtil;
-import lombok.Getter;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 // Height is lowercase because loombok does some strange sh*t with the getters. (getHEIGHT instead of getHeight) :(
@@ -13,47 +13,80 @@ public class ChatButton {
     private final static ResourceLocation CHAT_BUTTON_LOCATION = new ResourceLocation(Reference.MODID, "textures/guis/chat/message_icons.png");
     private final static int TEXTURE_SIZE = 32;
 
-    @Getter
-    private final int DEFAULT_U, DEFAULT_V, HOVER_U, HOVER_V, WIDTH, Height;
+    private final int WIDTH, HEIGHT, MARGIN_X, MARGIN_Y, DEFAULT_U, DEFAULT_V, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT;
+    private final String TOOL_TIP_TEXT;
 
-    public ChatButton(int defaultU, int defaultV, int hoverU, int hoverV, int width, int height) {
+    public ChatButton(String tooltipText, int width, int height, int marginX, int marginY, int defaultU, int defaultV, int hoverU, int hoverV, int textureWidth, int textureHeight) {
+        this.TOOL_TIP_TEXT = tooltipText;
+
+        this.WIDTH = width;
+        this.HEIGHT = height;
+
+        this.MARGIN_X = marginX;
+        this.MARGIN_Y = marginY;
+
         this.DEFAULT_U = defaultU;
         this.DEFAULT_V = defaultV;
 
         this.HOVER_U = hoverU;
         this.HOVER_V = hoverV;
 
-        this.WIDTH = width;
-        this.Height = height;
+        this.TEXTURE_WIDTH = textureWidth;
+        this.TEXTURE_HEIGHT = textureHeight;
     }
 
     public void render(PoseStack poseStack, float guiScale, int positionX, int positionY) {
         if (this.isHovered(guiScale, positionX, positionY)) {
-            GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, HOVER_U, HOVER_V, WIDTH, Height, TEXTURE_SIZE);
+            GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_SIZE);
+            renderTooltip(poseStack, guiScale);
             return;
         }
 
-        GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, DEFAULT_U, DEFAULT_V, WIDTH, Height, TEXTURE_SIZE);
+        GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, DEFAULT_U, DEFAULT_V, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_SIZE);
+    }
+
+    private void renderTooltip(PoseStack poseStack, float guiScale) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen == null) {
+            return;
+        }
+
+        minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
     }
 
     public boolean isHovered(float guiScale, int positionX, int positionY) {
-        return this.getMouseX(guiScale) >= positionX && this.getMouseY(guiScale) >= positionY &&
-                this.getMouseX(guiScale) < positionX + this.getWIDTH() && this.getMouseY(guiScale) < positionY + this.getHeight();
+        return isUnderXBox(guiScale, positionX) && isUnderYBox(guiScale, positionY);
     }
 
-    public int getMouseX(float guiScale) {
+    private boolean isUnderXBox(float guiScale, int positionX) {
+        return this.getScaledMouseX(guiScale) >= (positionX - MARGIN_X) && this.getScaledMouseX(guiScale) < positionX + WIDTH;
+    }
+
+    private boolean isUnderYBox(float guiScale, int positionY) {
+        return this.getScaledMouseY(guiScale) >= (positionY - 1) && this.getScaledMouseY(guiScale) < positionY + HEIGHT;
+    }
+
+    public int getScaledMouseX(float guiScale) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        int mouseX = (int) (minecraft.mouseHandler.xpos() * (double) minecraft.getWindow().getGuiScaledWidth() / (double) minecraft.getWindow().getScreenWidth());
+        int mouseX = getMouseX(minecraft);
         return (int) ((mouseX - 4.0) / guiScale);
     }
 
-    public int getMouseY(float guiScale) {
+    public int getScaledMouseY(float guiScale) {
         Minecraft minecraft = Minecraft.getInstance();
 
-        int mousePositionY = (int) (minecraft.mouseHandler.ypos() * (double) minecraft.getWindow().getGuiScaledHeight() / (double) minecraft.getWindow().getScreenHeight());
-        double scaledMouseY = (double) minecraft.getWindow().getGuiScaledHeight() - mousePositionY - 40.0;
+        int mousePositionY = getMouseY(minecraft);
+        double scaledMouseY = (double) (minecraft.getWindow().getGuiScaledHeight() - mousePositionY) - 40.0;
 
         return (int) -(scaledMouseY / (guiScale * minecraft.options.chatLineSpacing().get() + 1.0)) - 4;
+    }
+
+    private int getMouseX(Minecraft minecraft) {
+        return (int) (minecraft.mouseHandler.xpos() * (double) minecraft.getWindow().getGuiScaledWidth() / (double) minecraft.getWindow().getScreenWidth());
+    }
+
+    private int getMouseY(Minecraft minecraft) {
+        return (int) (minecraft.mouseHandler.ypos() * (double) minecraft.getWindow().getGuiScaledHeight() / (double) minecraft.getWindow().getScreenHeight());
     }
 }

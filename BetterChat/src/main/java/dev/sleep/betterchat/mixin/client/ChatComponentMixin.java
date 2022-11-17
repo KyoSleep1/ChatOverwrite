@@ -48,8 +48,8 @@ public abstract class ChatComponentMixin {
     @Shadow
     protected abstract int getLineHeight();
 
-    private final ChatButton EDIT_BUTTON = new ChatButton(2, 18, 18, 18, 12, 12),
-            DELETE_BUTTON = new ChatButton(2, 2, 19, 2, 11, 12);
+    private final ChatButton EDIT_BUTTON = new ChatButton("TEST 1",  1, 8, 7, -1, 2, 18, 18, 18, 12, 12),
+            DELETE_BUTTON = new ChatButton("TEST 2", 5, 8, 3, 2, 2, 2, 19, 2, 11, 12);
 
     /**
      * @author KyoSleep
@@ -127,8 +127,8 @@ public abstract class ChatComponentMixin {
         poseStack.pushPose();
         poseStack.scale(0.6100F, 0.6100F, 1.0F);
 
-        DELETE_BUTTON.render(poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
         EDIT_BUTTON.render(poseStack, guiScale, 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
+        DELETE_BUTTON.render(poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
 
         poseStack.popPose();
     }
