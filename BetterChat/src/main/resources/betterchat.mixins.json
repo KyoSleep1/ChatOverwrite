@@ -8,7 +8,6 @@
   "client": [
     "client.ChatComponentMixin",
     "client.ChatListenerMixin",
-    "client.ChatScreenMixin",
     "client.MinecraftAccessor",
     "client.MinecraftMixin"
   ],

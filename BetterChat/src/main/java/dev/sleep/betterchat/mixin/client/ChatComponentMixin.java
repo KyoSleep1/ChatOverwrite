@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
 import dev.sleep.betterchat.client.gui.ChatScreenContainer;
+import dev.sleep.betterchat.client.gui.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
@@ -22,6 +23,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
@@ -33,11 +35,18 @@ public abstract class ChatComponentMixin {
     private Minecraft minecraft;
 
     @Shadow
-    private int chatScrollbarPos;
+    @Final
+    private List<GuiMessage.Line> trimmedMessages;
 
     @Shadow
     @Final
-    private List<GuiMessage.Line> trimmedMessages;
+    private List<GuiMessage> allMessages;
+
+    @Shadow
+    private int chatScrollbarPos;
+
+    @Shadow
+    private boolean newMessageSinceScroll;
 
     @Shadow
     protected abstract boolean isChatHidden();
@@ -58,16 +67,10 @@ public abstract class ChatComponentMixin {
     protected abstract void logChatMessage(Component chatComponent, @Nullable GuiMessageTag tag);
 
     @Shadow
-    private boolean newMessageSinceScroll;
-
-    @Shadow
     public abstract void scrollChat(int posInc);
 
     @Shadow
-    @Final
-    private List<GuiMessage> allMessages;
-
-    @Shadow public abstract int getWidth();
+    public abstract int getWidth();
 
     /**
      * @author KyoSleep
@@ -133,28 +136,26 @@ public abstract class ChatComponentMixin {
 
         poseStack.pushPose();
         poseStack.scale(guiScale, guiScale, 1.0F);
-        poseStack.translate(2.0, 8.0, 0.0);
 
-        renderMessages(poseStack, guiScale, this.trimmedMessages.size(), this.getLinesPerPage(), this.getLineHeight(), chatWidthBasedOnScale, chatOpacityFactor,
-                textBackgroundOpacity, chatSpacing, this.isChatFocused(), tickCount);
+        poseStack.translate(2.0, 8.0, 0.0);
+        renderMessages(poseStack, chatWidthBasedOnScale, chatOpacityFactor, textBackgroundOpacity, chatSpacing, tickCount);
+
         poseStack.popPose();
     }
 
-    private void renderMessages(PoseStack poseStack, float guiScale, int visibleMessagesSize, int linesPerPage, int lineHeight, int chatWidthBasedOnScale,
-                                double chatOpacityFactor, double textBackgroundOpacity, double chatSpacing, boolean chatFocused, int tickCount) {
-        for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < visibleMessagesSize &&
-                visibleMessageIndex < linesPerPage; visibleMessageIndex++) {
+    private void renderMessages(PoseStack poseStack, int chatWidthBasedOnScale, double chatOpacityFactor, double textBackgroundOpacity, double chatSpacing, int tickCount) {
+        for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < this.trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
             GuiMessage.Line visibleMessage = this.trimmedMessages.get(visibleMessageIndex + this.chatScrollbarPos);
             if (visibleMessage == null) {
                 continue;
             }
 
             int timeSinceMessageAdded = tickCount - visibleMessage.addedTime();
-            if (((timeSinceMessageAdded >= 200) && !chatFocused)) {
+            if (((timeSinceMessageAdded >= 200) && !this.isChatFocused())) {
                 continue;
             }
 
-            double alphaColor = chatFocused ? 1.0 : ChatComponentMixin.getTimeFactor(timeSinceMessageAdded);
+            double alphaColor = this.isChatFocused() ? 1.0 : ChatComponentMixin.getTimeFactor(timeSinceMessageAdded);
             int chatOpacityColor = (int) ((255.0 * alphaColor) * chatOpacityFactor);
             int backgroundOpacityColor = (int) ((255.0 * alphaColor) * textBackgroundOpacity);
 
@@ -163,7 +164,7 @@ public abstract class ChatComponentMixin {
             }
 
             double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
-            int lineMaxHeight = -visibleMessageIndex * lineHeight;
+            int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
 
             float textPositionX = 0.0F;
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
@@ -172,16 +173,29 @@ public abstract class ChatComponentMixin {
             poseStack.pushPose();
             poseStack.translate(0.0, 0.0, 50.0);
 
-            ChatComponent.fill(poseStack, -4, (lineMaxHeight - lineHeight), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
+            ChatComponent.fill(poseStack, -4, (lineMaxHeight - this.getLineHeight()), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
             if (shouldRenderButtons(visibleMessage)) {
                 textPositionX = 20.0F;
-                renderButtons(poseStack, guiScale, visibleMessageIndex, textPositionY);
+                renderButtons(poseStack, (float) this.getScale(), visibleMessageIndex, textPositionY);
             }
 
             this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), textPositionX, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
             poseStack.popPose();
             RenderSystem.disableBlend();
         }
+    }
+
+    private static double getTimeFactor(int i) {
+        double d = (double) i / 200.0;
+        d = 1.0 - d;
+        d *= 10.0;
+        d = Mth.clamp(d, 0.0, 1.0);
+        d *= d;
+        return d;
+    }
+
+    private boolean shouldRenderButtons(GuiMessage.Line line) {
+        return line.endOfEntry() && ClientChatHandler.isMessageOwner(line.addedTime());
     }
 
     private void renderButtons(PoseStack poseStack, float guiScale, int visibleMessageIndex, int textPositionY) {
@@ -198,17 +212,26 @@ public abstract class ChatComponentMixin {
         return -15 - (messageIndex * 6);
     }
 
-    private boolean shouldRenderButtons(GuiMessage.Line line) {
-        return line.endOfEntry() && ClientChatHandler.isMessageOwner(line.addedTime());
-    }
+    @Inject(method = "handleChatQueueClicked(DD)Z", at = @At(target = "Lnet/minecraft/client/Minecraft;getChatListener()Lnet/minecraft/client/multiplayer/chat/ChatListener;", value = "INVOKE"))
+    public void handleIconClick(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir) {
+        ChatButton editButton = ChatScreenContainer.getEditButton();
+        ChatButton deleteButton = ChatScreenContainer.getDeleteButton();
 
-    private static double getTimeFactor(int i) {
-        double d = (double) i / 200.0;
-        d = 1.0 - d;
-        d *= 10.0;
-        d = Mth.clamp(d, 0.0, 1.0);
-        d *= d;
-        return d;
+        double chatSpacing = this.minecraft.options.chatLineSpacing().get();
+        for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
+            double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
+
+            int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
+            int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
+
+            if (editButton.isHovered(visibleMessageIndex, (float) this.getScale(), 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
+                editButton.press();
+            }
+
+            if (deleteButton.isHovered(visibleMessageIndex, (float) this.getScale(), 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
+                deleteButton.press();
+            }
+        }
     }
 
     @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
@@ -220,7 +243,7 @@ public abstract class ChatComponentMixin {
             method = "getClickedComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;",
             index = 1
     )
-    public int correctClickPosition(int x) {
+    public int correctMessageClickPosition(int x) {
         return x - 18;
     }
 }

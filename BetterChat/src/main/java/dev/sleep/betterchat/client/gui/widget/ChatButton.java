@@ -14,12 +14,12 @@ public class ChatButton {
     private final static int TEXTURE_SIZE = 32;
 
     private final String TOOL_TIP_TEXT;
-    private final Button.OnPress ON_PRESS;
+    private final ChatButton.OnPress ON_PRESS;
 
     private final int WIDTH, HEIGHT, MARGIN_X, MARGIN_Y, DEFAULT_U, DEFAULT_V, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT;
 
 
-    public ChatButton(String tooltipText, int width, int height, int marginX, int marginY, int defaultU, int defaultV, int hoverU, int hoverV, int textureWidth, int textureHeight, Button.OnPress onPress) {
+    public ChatButton(String tooltipText, int width, int height, int marginX, int marginY, int defaultU, int defaultV, int hoverU, int hoverV, int textureWidth, int textureHeight, ChatButton.OnPress onPress) {
         this.TOOL_TIP_TEXT = tooltipText;
 
         this.WIDTH = width;
@@ -94,5 +94,13 @@ public class ChatButton {
         }
 
         minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
+    }
+
+    public void press(){
+        this.ON_PRESS.onPress(this);
+    }
+
+    public interface OnPress {
+        void onPress(ChatButton chatButton);
     }
 }
