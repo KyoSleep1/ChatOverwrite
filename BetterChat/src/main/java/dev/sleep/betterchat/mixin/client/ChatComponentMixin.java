@@ -3,11 +3,17 @@ package dev.sleep.betterchat.mixin.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
-import dev.sleep.betterchat.client.chat.gui.widget.ChatButton;
+import dev.sleep.betterchat.client.gui.ChatScreenContainer;
 import net.minecraft.client.GuiMessage;
+import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.components.ComponentRenderUtils;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MessageSignature;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -48,8 +54,61 @@ public abstract class ChatComponentMixin {
     @Shadow
     protected abstract int getLineHeight();
 
-    private final ChatButton EDIT_BUTTON = new ChatButton("TEST 1",  1, 8, 7, -1, 2, 18, 18, 18, 12, 12),
-            DELETE_BUTTON = new ChatButton("TEST 2", 5, 8, 3, 2, 2, 2, 19, 2, 11, 12);
+    @Shadow
+    protected abstract void logChatMessage(Component chatComponent, @Nullable GuiMessageTag tag);
+
+    @Shadow
+    private boolean newMessageSinceScroll;
+
+    @Shadow
+    public abstract void scrollChat(int posInc);
+
+    @Shadow
+    @Final
+    private List<GuiMessage> allMessages;
+
+    @Shadow public abstract int getWidth();
+
+    /**
+     * @author KyoSleep
+     * @reason We need a way to know if the current FormattedCharSequence is the first entry so we hack "endOfEntry" to "startOfEntry"
+     * this helps us to render icon in the correct line.
+     */
+    @Overwrite
+    private void addMessage(Component chatComponent, @Nullable MessageSignature headerSignature, int addedTime, @Nullable GuiMessageTag tag, boolean onlyTrim) {
+        this.logChatMessage(chatComponent, tag);
+
+        int i = Mth.floor((double) this.getWidth() / this.getScale());
+        if (tag != null && tag.icon() != null) {
+            i -= tag.icon().width + 4 + 2;
+        }
+
+        List<FormattedCharSequence> list = ComponentRenderUtils.wrapComponents(chatComponent, i, this.minecraft.font);
+        boolean bl = this.isChatFocused();
+
+        for (int j = 0; j < list.size(); ++j) {
+            FormattedCharSequence formattedCharSequence = list.get(j);
+            if (bl && this.chatScrollbarPos > 0) {
+                this.newMessageSinceScroll = true;
+                this.scrollChat(1);
+            }
+
+            //Before: boolean bl2 = j == list.size() - 1;
+            boolean bl2 = j == 0;
+            this.trimmedMessages.add(0, new GuiMessage.Line(addedTime, formattedCharSequence, tag, bl2));
+        }
+
+        while (this.trimmedMessages.size() > 100) {
+            this.trimmedMessages.remove(this.trimmedMessages.size() - 1);
+        }
+
+        if (!onlyTrim) {
+            this.allMessages.add(0, new GuiMessage(addedTime, chatComponent, headerSignature, tag));
+            while (this.allMessages.size() > 100) {
+                this.allMessages.remove(this.allMessages.size() - 1);
+            }
+        }
+    }
 
     /**
      * @author KyoSleep
@@ -59,6 +118,8 @@ public abstract class ChatComponentMixin {
     @Overwrite
     public void render(PoseStack poseStack, int tickCount) {
         ChatComponent chatComponent = (ChatComponent) (Object) this;
+        ClientChatHandler.reset(false);
+
         if (this.isChatHidden() || this.trimmedMessages.size() <= 0) {
             return;
         }
@@ -127,31 +188,18 @@ public abstract class ChatComponentMixin {
         poseStack.pushPose();
         poseStack.scale(0.6100F, 0.6100F, 1.0F);
 
-        EDIT_BUTTON.render(poseStack, guiScale, 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
-        DELETE_BUTTON.render(poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
+        ChatScreenContainer.getEditButton().render(visibleMessageIndex, poseStack, guiScale, 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
+        ChatScreenContainer.getDeleteButton().render(visibleMessageIndex, poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
 
         poseStack.popPose();
     }
 
-    @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
-    public void clearOwnerList(boolean clearSentMsgHistory, CallbackInfo ci){
-        ClientChatHandler.clearOwnerList();
-    }
-
-    @ModifyArg(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/StringSplitter;componentStyleAtWidth(Lnet/minecraft/util/FormattedCharSequence;I)Lnet/minecraft/network/chat/Style;"),
-            method = "getClickedComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;",
-            index = 1
-    )
-    public int correctClickPosition(int x) {
-        return x - 18;
-    }
-
-    private int calculateIconSpacing(int messageIndex){
+    private int calculateIconSpacing(int messageIndex) {
         return -15 - (messageIndex * 6);
     }
 
     private boolean shouldRenderButtons(GuiMessage.Line line) {
-        return ClientChatHandler.isMessageOwner(line.content());
+        return line.endOfEntry() && ClientChatHandler.isMessageOwner(line.addedTime());
     }
 
     private static double getTimeFactor(int i) {
@@ -161,5 +209,18 @@ public abstract class ChatComponentMixin {
         d = Mth.clamp(d, 0.0, 1.0);
         d *= d;
         return d;
+    }
+
+    @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
+    public void clearOwnerList(boolean clearSentMsgHistory, CallbackInfo ci) {
+        ClientChatHandler.reset(true);
+    }
+
+    @ModifyArg(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/StringSplitter;componentStyleAtWidth(Lnet/minecraft/util/FormattedCharSequence;I)Lnet/minecraft/network/chat/Style;"),
+            method = "getClickedComponentStyleAt(DD)Lnet/minecraft/network/chat/Style;",
+            index = 1
+    )
+    public int correctClickPosition(int x) {
+        return x - 18;
     }
 }

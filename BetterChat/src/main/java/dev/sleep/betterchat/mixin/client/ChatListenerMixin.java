@@ -15,7 +15,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.time.Instant;
-import java.util.UUID;
 
 @Mixin(ChatListener.class)
 public abstract class ChatListenerMixin {
@@ -26,11 +25,10 @@ public abstract class ChatListenerMixin {
 
     @Inject(method = "showMessageToPlayer", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/ChatComponent;addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/GuiMessageTag;)V"))
     private void addMessageToOwnerList(ChatType.Bound bound, PlayerChatMessage playerChatMessage, Component component, PlayerInfo playerInfo, boolean bl, Instant instant, CallbackInfoReturnable<Boolean> cir) {
-        if(playerChatMessage.signer().isSystem()){
+        if (playerChatMessage.signer().isSystem()) {
             return;
         }
 
-        UUID messageOwner = playerChatMessage.signer().profileId();
-        ClientChatHandler.addToOwnerList(this.minecraft, component, messageOwner);
+        ClientChatHandler.addToMessageList(minecraft, playerChatMessage.signer().profileId());
     }
 }

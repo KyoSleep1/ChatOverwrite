@@ -1,4 +1,4 @@
-package dev.sleep.betterchat.client.chat.gui;
+package dev.sleep.betterchat.client.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
