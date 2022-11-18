@@ -2,7 +2,7 @@ package dev.sleep.betterchat.client.gui.chat.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.Reference;
-import dev.sleep.betterchat.client.chat.ClientChatHandler;
+import dev.sleep.betterchat.client.chat.ChatHandler;
 import dev.sleep.betterchat.client.gui.GuiUtil;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
@@ -100,9 +100,9 @@ public class ChatButton {
     }
 
     public void press(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, GuiMessage.Line visibleMessage, int messageIndex) {
-        ClientChatHandler.setLastFetchedAddedTime(visibleMessage.addedTime());
+        ChatHandler.setLastFetchedAddedTime(visibleMessage.addedTime());
         this.ON_PRESS.onPress(allMessagesList, visibleMessagesList, this, messageIndex);
-        ClientChatHandler.setLastFetchedAddedTime(-40000);
+        ChatHandler.setLastFetchedAddedTime(-40000);
     }
 
     public interface OnPress {
