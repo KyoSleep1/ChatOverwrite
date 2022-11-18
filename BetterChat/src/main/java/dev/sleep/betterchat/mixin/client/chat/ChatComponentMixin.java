@@ -1,8 +1,8 @@
-package dev.sleep.betterchat.mixin.client.gui.chat;
+package dev.sleep.betterchat.mixin.client.chat;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import dev.sleep.betterchat.client.chat.ChatHandler;
+import dev.sleep.betterchat.client.chat.ClientChatHandler;
 import dev.sleep.betterchat.client.gui.chat.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.GuiMessageTag;
@@ -77,12 +77,11 @@ public abstract class ChatComponentMixin {
     }
 
     private static final ChatButton EDIT_BUTTON = new ChatButton("TEST 1", 1, 8, 7, 6, 2, 18,
-            18, 18, 12, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) ->
-            ChatHandler.editMessage(ChatHandler.getTextFromEditedButton(allMessagesList)));
+            18, 18, 12, 12, ClientChatHandler::editMessage);
+
 
     private static final ChatButton DELETE_BUTTON = new ChatButton("TEST 2", 5, 8, 3, 6, 2, 2,
-            19, 2, 11, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) ->
-            ChatHandler.deleteMessage(allMessagesList, visibleMessagesList, messageIndex));
+            19, 2, 11, 12, ClientChatHandler::deleteMessage);
 
     /**
      * @author KyoSleep
@@ -125,6 +124,11 @@ public abstract class ChatComponentMixin {
         }
     }
 
+    @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
+    public void clearMessageList(boolean clearSentMsgHistory, CallbackInfo ci) {
+        ClientChatHandler.clearMessageList();
+    }
+
     /**
      * @author KyoSleep
      * @reason Draw Edit/Delete button during message rendering, remove Scroll Indicator (It's ugly) and Message Safety Icon indicator
@@ -164,7 +168,7 @@ public abstract class ChatComponentMixin {
                 continue;
             }
 
-            double alphaColor = this.isChatFocused() ? 1.0 : this.getTimeFactor(timeSinceMessageAdded);
+            double alphaColor = this.isChatFocused() ? 1.0 : ChatComponentMixin.getTimeFactor(timeSinceMessageAdded);
             int chatOpacityColor = (int) ((255.0 * alphaColor) * chatOpacityFactor);
             int backgroundOpacityColor = (int) ((255.0 * alphaColor) * textBackgroundOpacity);
 
@@ -175,8 +179,8 @@ public abstract class ChatComponentMixin {
             double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
             int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
 
-            float textPositionX = 0.0F;
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
+            float textPositionX = 0.0F;
 
             RenderSystem.enableBlend();
             poseStack.pushPose();
@@ -185,7 +189,7 @@ public abstract class ChatComponentMixin {
             ChatComponent.fill(poseStack, -4, (lineMaxHeight - this.getLineHeight()), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
             if (shouldRenderButtons(visibleMessage)) {
                 textPositionX = 20.0F;
-                renderButtons(poseStack, (float) this.getScale(), visibleMessageIndex, textPositionY);
+                renderButtons(poseStack, (float) this.getScale(), visibleMessageIndex);
             }
 
             this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), textPositionX, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
@@ -195,46 +199,47 @@ public abstract class ChatComponentMixin {
     }
 
     private boolean shouldRenderButtons(GuiMessage.Line line) {
-        return line.endOfEntry() && ChatHandler.isMessageOwner(line.addedTime());
+        return line.endOfEntry() && ClientChatHandler.isMessageOwner(line.addedTime());
     }
 
-    private void renderButtons(PoseStack poseStack, float guiScale, int visibleMessageIndex, int textPositionY) {
+    private void renderButtons(PoseStack poseStack, float guiScale, int visibleMessageIndex) {
         poseStack.pushPose();
         poseStack.scale(0.6100F, 0.6100F, 1.0F);
 
-        EDIT_BUTTON.render(visibleMessageIndex, poseStack, guiScale, 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
-        DELETE_BUTTON.render(visibleMessageIndex, poseStack, guiScale, 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10);
+        EDIT_BUTTON.render(visibleMessageIndex, poseStack, guiScale, 16, this.getIconYBasedOnIndex(visibleMessageIndex));
+        DELETE_BUTTON.render(visibleMessageIndex, poseStack, guiScale, 1, this.getIconYBasedOnIndex(visibleMessageIndex));
 
         poseStack.popPose();
     }
 
-    private int calculateIconSpacing(int messageIndex) {
-        return -15 - (messageIndex * 6);
-    }
-
     @Inject(method = "handleChatQueueClicked(DD)Z", at = @At(target = "Lnet/minecraft/client/Minecraft;getChatListener()Lnet/minecraft/client/multiplayer/chat/ChatListener;", value = "INVOKE"))
     public void handleIconClick(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir) {
-        double chatSpacing = this.minecraft.options.chatLineSpacing().get();
         for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
             GuiMessage.Line visibleMessage = this.trimmedMessages.get(visibleMessageIndex + this.chatScrollbarPos);
-            double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
-
-            int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
-            int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
-
-            if (EDIT_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                EDIT_BUTTON.press(this.allMessages, this.trimmedMessages, visibleMessage, visibleMessageIndex);
+            if (!ClientChatHandler.isMessageOwner(visibleMessage.addedTime())) {
+                continue;
             }
 
-            if (DELETE_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                DELETE_BUTTON.press(this.allMessages, this.trimmedMessages, visibleMessage, visibleMessageIndex);
+            if (EDIT_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 16, this.getIconYBasedOnIndex(visibleMessageIndex))) {
+                EDIT_BUTTON.getOnPress().press(visibleMessage);
+            }
+
+            if (DELETE_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 1, this.getIconYBasedOnIndex(visibleMessageIndex))) {
+                DELETE_BUTTON.getOnPress().press(visibleMessage);
             }
         }
     }
 
-    @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
-    public void clearMessageList(boolean clearSentMsgHistory, CallbackInfo ci) {
-        ChatHandler.clearMessageList();
+    private int getIconYBasedOnIndex(int messageIndex) {
+        return (-15 - (messageIndex * 6) + calculateIconSpacing(messageIndex) + 10);
+    }
+
+    private int calculateIconSpacing(int messageIndex) {
+        double chatSpacing = this.minecraft.options.chatLineSpacing().get();
+        double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
+
+        int lineMaxHeight = -messageIndex * this.getLineHeight();
+        return (int) ((double) lineMaxHeight + chatMargin);
     }
 
     @ModifyArg(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/StringSplitter;componentStyleAtWidth(Lnet/minecraft/util/FormattedCharSequence;I)Lnet/minecraft/network/chat/Style;"),

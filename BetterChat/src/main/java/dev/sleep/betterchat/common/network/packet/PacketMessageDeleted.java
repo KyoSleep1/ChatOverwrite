@@ -1,4 +1,4 @@
-package dev.sleep.betterchat.network.packet;
+package dev.sleep.betterchat.common.network.packet;
 
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;

@@ -9,4 +9,5 @@ public interface MinecraftAccessor {
 
     @Invoker("openChatScreen")
     void openChat(String defaultText);
+
 }

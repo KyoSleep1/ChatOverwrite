@@ -1,6 +1,6 @@
 package dev.sleep.betterchat;
 
-import dev.sleep.betterchat.network.NetworkManager;
+import dev.sleep.betterchat.common.network.NetworkManager;
 import lombok.Getter;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;

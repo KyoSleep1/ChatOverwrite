@@ -2,22 +2,22 @@ package dev.sleep.betterchat.client.gui.chat.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.Reference;
-import dev.sleep.betterchat.client.chat.ChatHandler;
 import dev.sleep.betterchat.client.gui.GuiUtil;
+import lombok.Getter;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
-import java.util.List;
-
 public class ChatButton {
+
+    private final String TOOL_TIP_TEXT;
 
     private final static ResourceLocation CHAT_BUTTON_LOCATION = new ResourceLocation(Reference.MODID, "textures/guis/chat/message_icons.png");
     private final static int TEXTURE_SIZE = 32;
 
-    private final String TOOL_TIP_TEXT;
-    private final ChatButton.OnPress ON_PRESS;
+    @Getter
+    private final ChatButton.OnPress OnPress;
 
     private final int WIDTH, HEIGHT, MARGIN_X, MARGIN_Y, DEFAULT_U, DEFAULT_V, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT;
 
@@ -40,7 +40,7 @@ public class ChatButton {
         this.TEXTURE_WIDTH = textureWidth;
         this.TEXTURE_HEIGHT = textureHeight;
 
-        this.ON_PRESS = onPress;
+        this.OnPress = onPress;
     }
 
     public void render(int visibleMessageIndex, PoseStack poseStack, float guiScale, int positionX, int positionY) {
@@ -99,13 +99,7 @@ public class ChatButton {
         minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
     }
 
-    public void press(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, GuiMessage.Line visibleMessage, int messageIndex) {
-        ChatHandler.setLastFetchedAddedTime(visibleMessage.addedTime());
-        this.ON_PRESS.onPress(allMessagesList, visibleMessagesList, this, messageIndex);
-        ChatHandler.setLastFetchedAddedTime(-40000);
-    }
-
     public interface OnPress {
-        void onPress(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, ChatButton chatButton, int messageIndex);
+        void press(GuiMessage.Line messageLine);
     }
 }

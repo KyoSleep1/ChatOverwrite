@@ -1,8 +1,8 @@
-package dev.sleep.betterchat.network;
+package dev.sleep.betterchat.common.network;
 
 import dev.sleep.betterchat.Reference;
-import dev.sleep.betterchat.network.packet.PacketMessageDeleted;
-import dev.sleep.betterchat.network.packet.PacketNotifyMessageDelete;
+import dev.sleep.betterchat.common.network.packet.PacketMessageDeleted;
+import dev.sleep.betterchat.common.network.packet.PacketNotifyMessageDelete;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.resources.ResourceLocation;

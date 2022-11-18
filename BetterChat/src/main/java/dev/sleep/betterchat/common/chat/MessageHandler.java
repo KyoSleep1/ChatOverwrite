@@ -1,18 +1,45 @@
-package dev.sleep.betterchat.client.chat;
+package dev.sleep.betterchat.common.chat;
 
+import dev.sleep.betterchat.mixin.client.chat.ChatComponentAccessor;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 
 public class MessageHandler {
 
-    public static String getMessageTextAndFormat(GuiMessage message) {
+    /**
+     * Used to get a Formatted Message (Without Player's DisplayName) text from a GuiMessage
+     */
+    public static String getFormattedContentText(GuiMessage message) {
         String[] strippedMessage = MessageHandler.getLegibleText(Objects.requireNonNull(message).content().getVisualOrderText()).split(" ");
         return MessageHandler.getCleanText(strippedMessage, 0);
+    }
+
+    /**
+     * Overload for getFormattedContentText(GuiMessage message)
+     */
+    public static String getFormattedContentText(GuiMessage.Line lineMessage) {
+        GuiMessage message = MessageHandler.getMessageFromLine(lineMessage);
+        return MessageHandler.getFormattedContentText(message);
+    }
+
+    public static GuiMessage getMessageFromLine(GuiMessage.Line messageLine) {
+        List<GuiMessage> allMessagesList = ((ChatComponentAccessor) Minecraft.getInstance().gui.getChat()).getAllMessagesList();
+
+        for (GuiMessage fetchedMessage : allMessagesList) {
+            if (fetchedMessage.addedTime() != messageLine.addedTime()) {
+                continue;
+            }
+
+            return fetchedMessage;
+        }
+
+        return null;
     }
 
     /**
