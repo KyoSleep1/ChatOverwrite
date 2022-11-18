@@ -1,6 +1,6 @@
-package dev.sleep.betterchat.mixin.client;
+package dev.sleep.betterchat.mixin.client.chat;
 
-import dev.sleep.betterchat.client.chat.ClientChatHandler;
+import dev.sleep.betterchat.client.chat.ChatHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.multiplayer.chat.ChatListener;
@@ -29,6 +29,6 @@ public abstract class ChatListenerMixin {
             return;
         }
 
-        ClientChatHandler.addToMessageList(minecraft, playerChatMessage.signer().profileId());
+        ChatHandler.addToMessageList(minecraft, playerChatMessage.signer().profileId());
     }
 }

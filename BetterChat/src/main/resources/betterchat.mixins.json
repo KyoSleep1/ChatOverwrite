@@ -6,8 +6,8 @@
   "mixins": [
   ],
   "client": [
-    "client.ChatComponentMixin",
-    "client.ChatListenerMixin",
+    "client.chat.ChatComponentMixin",
+    "client.chat.ChatListenerMixin",
     "client.MinecraftAccessor",
     "client.MinecraftMixin"
   ],
