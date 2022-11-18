@@ -30,8 +30,5 @@
 
 # fabric
 
-EnhancedEntities/run
-EnhancedEntities/build
-
-BetterChat/run
-BetterChat/build
+run/
+build/
