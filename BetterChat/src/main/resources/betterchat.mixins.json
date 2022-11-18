@@ -6,10 +6,10 @@
   "mixins": [
   ],
   "client": [
-    "client.chat.ChatComponentMixin",
-    "client.chat.ChatListenerMixin",
     "client.MinecraftAccessor",
-    "client.MinecraftMixin"
+    "client.MinecraftMixin",
+    "client.gui.chat.ChatComponentMixin",
+    "client.chat.ChatListenerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

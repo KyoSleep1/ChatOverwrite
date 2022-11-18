@@ -1,4 +1,4 @@
-package dev.sleep.betterchat;
+package dev.sleep.betterchat.client;
 
 import dev.sleep.betterchat.network.NetworkManager;
 import net.fabricmc.api.ClientModInitializer;

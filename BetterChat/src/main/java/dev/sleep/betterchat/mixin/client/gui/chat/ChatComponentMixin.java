@@ -1,4 +1,4 @@
-package dev.sleep.betterchat.mixin.client.chat;
+package dev.sleep.betterchat.mixin.client.gui.chat;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -71,15 +71,18 @@ public abstract class ChatComponentMixin {
     @Shadow
     public abstract int getWidth();
 
+    @Shadow
+    private static double getTimeFactor(int counter) {
+        return 0;
+    }
+
     private static final ChatButton EDIT_BUTTON = new ChatButton("TEST 1", 1, 8, 7, 6, 2, 18,
-            18, 18, 12, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) -> {
-        ChatHandler.openChat(ChatHandler.getTextFromEditedButton(allMessagesList));
-    });
+            18, 18, 12, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) ->
+            ChatHandler.editMessage(ChatHandler.getTextFromEditedButton(allMessagesList)));
 
     private static final ChatButton DELETE_BUTTON = new ChatButton("TEST 2", 5, 8, 3, 6, 2, 2,
-            19, 2, 11, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) -> {
-        ChatHandler.deleteMessage(allMessagesList, visibleMessagesList, messageIndex);
-    });
+            19, 2, 11, 12, (allMessagesList, visibleMessagesList, chatButton, messageIndex) ->
+            ChatHandler.deleteMessage(allMessagesList, visibleMessagesList, messageIndex));
 
     /**
      * @author KyoSleep
@@ -129,13 +132,12 @@ public abstract class ChatComponentMixin {
      */
     @Overwrite
     public void render(PoseStack poseStack, int tickCount) {
-        ChatComponent chatComponent = (ChatComponent) (Object) this;
         if (this.isChatHidden() || this.trimmedMessages.size() <= 0) {
             return;
         }
 
         float guiScale = (float) this.getScale();
-        int chatWidthBasedOnScale = Mth.ceil(chatComponent.getWidth() / guiScale);
+        int chatWidthBasedOnScale = Mth.ceil(this.getWidth() / guiScale);
 
         double chatOpacityFactor = this.minecraft.options.chatOpacity().get() * (double) 0.9f + (double) 0.1f;
         double textBackgroundOpacity = this.minecraft.options.textBackgroundOpacity().get();
@@ -162,7 +164,7 @@ public abstract class ChatComponentMixin {
                 continue;
             }
 
-            double alphaColor = this.isChatFocused() ? 1.0 : ChatComponentMixin.getTimeFactor(timeSinceMessageAdded);
+            double alphaColor = this.isChatFocused() ? 1.0 : this.getTimeFactor(timeSinceMessageAdded);
             int chatOpacityColor = (int) ((255.0 * alphaColor) * chatOpacityFactor);
             int backgroundOpacityColor = (int) ((255.0 * alphaColor) * textBackgroundOpacity);
 
@@ -190,15 +192,6 @@ public abstract class ChatComponentMixin {
             poseStack.popPose();
             RenderSystem.disableBlend();
         }
-    }
-
-    private static double getTimeFactor(int i) {
-        double d = (double) i / 200.0;
-        d = 1.0 - d;
-        d *= 10.0;
-        d = Mth.clamp(d, 0.0, 1.0);
-        d *= d;
-        return d;
     }
 
     private boolean shouldRenderButtons(GuiMessage.Line line) {

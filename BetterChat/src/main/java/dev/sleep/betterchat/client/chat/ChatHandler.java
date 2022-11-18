@@ -85,14 +85,17 @@ public class ChatHandler {
         return null;
     }
 
-    public static void openChat(String messageToEdit) {
-        ((MinecraftAccessor) Minecraft.getInstance()).openChat(messageToEdit);
+    public static void editMessage(String textToEdit) {
+        ChatHandler.openChat(textToEdit);
     }
 
     public static void deleteMessage(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, int messageIndex) {
-        ((MinecraftAccessor) Minecraft.getInstance()).openChat("");
-
+        ChatHandler.openChat("");
         ChatHandler.deleteMessageFromEverything(allMessagesList, visibleMessagesList, messageIndex);
         ClientPlayNetworking.send(NetworkManager.DELETE_MESSAGE_PACKET_ID, PacketMessageDeleted.createWritedBuf());
+    }
+
+    public static void openChat(String message) {
+        ((MinecraftAccessor) Minecraft.getInstance()).openChat(message);
     }
 }

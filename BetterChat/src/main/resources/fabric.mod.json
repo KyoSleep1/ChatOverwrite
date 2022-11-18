@@ -18,7 +18,7 @@
   "environment": "*",
   "entrypoints": {
     "client": [
-      "dev.sleep.betterchat.MainClient"
+      "dev.sleep.betterchat.client.MainClient"
     ],
     "main": [
       "dev.sleep.betterchat.Main"
