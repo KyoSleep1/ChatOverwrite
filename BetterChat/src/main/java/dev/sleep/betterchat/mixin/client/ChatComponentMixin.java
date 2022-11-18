@@ -3,8 +3,8 @@ package dev.sleep.betterchat.mixin.client;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
-import dev.sleep.betterchat.client.gui.ChatScreenContainer;
-import dev.sleep.betterchat.client.gui.widget.ChatButton;
+import dev.sleep.betterchat.client.gui.chat.ChatScreenContainer;
+import dev.sleep.betterchat.client.gui.chat.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
@@ -219,17 +219,18 @@ public abstract class ChatComponentMixin {
 
         double chatSpacing = this.minecraft.options.chatLineSpacing().get();
         for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
+            GuiMessage.Line visibleMessage = this.trimmedMessages.get(visibleMessageIndex + this.chatScrollbarPos);
             double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
 
             int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
 
             if (editButton.isHovered(visibleMessageIndex, (float) this.getScale(), 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                editButton.press();
+                editButton.press(visibleMessage, this.allMessages);
             }
 
             if (deleteButton.isHovered(visibleMessageIndex, (float) this.getScale(), 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                deleteButton.press();
+                deleteButton.press(visibleMessage, this.allMessages);
             }
         }
     }

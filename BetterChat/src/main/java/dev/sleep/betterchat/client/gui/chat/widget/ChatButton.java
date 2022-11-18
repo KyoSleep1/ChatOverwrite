@@ -1,12 +1,15 @@
-package dev.sleep.betterchat.client.gui.widget;
+package dev.sleep.betterchat.client.gui.chat.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.Reference;
+import dev.sleep.betterchat.client.chat.ClientChatHandler;
 import dev.sleep.betterchat.client.gui.GuiUtil;
+import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.List;
 
 public class ChatButton {
 
@@ -96,11 +99,12 @@ public class ChatButton {
         minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
     }
 
-    public void press(){
-        this.ON_PRESS.onPress(this);
+    public void press(GuiMessage.Line visibleMessage, List<GuiMessage> messageList) {
+        ClientChatHandler.setLastFetchedAddedTime(visibleMessage.addedTime());
+        this.ON_PRESS.onPress(messageList, this);
     }
 
     public interface OnPress {
-        void onPress(ChatButton chatButton);
+        void onPress(List<GuiMessage> messageList, ChatButton chatButton);
     }
 }
