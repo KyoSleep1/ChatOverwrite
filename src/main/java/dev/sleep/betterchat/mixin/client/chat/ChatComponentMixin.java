@@ -2,6 +2,7 @@ package dev.sleep.betterchat.mixin.client.chat;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.sleep.betterchat.client.MouseHelper;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
 import dev.sleep.betterchat.client.gui.chat.widget.ChatButton;
 import net.minecraft.client.GuiMessage;
@@ -75,6 +76,9 @@ public abstract class ChatComponentMixin {
     private static double getTimeFactor(int counter) {
         return 0;
     }
+
+    @Shadow
+    protected abstract int getMessageIndexAt(double chatY);
 
     private static final ChatButton EDIT_BUTTON = new ChatButton("TEST 1", 1, 8, 7, 6, 2, 18,
             18, 18, 12, 12, ClientChatHandler::editMessage);
@@ -157,8 +161,8 @@ public abstract class ChatComponentMixin {
     }
 
     private void renderMessages(PoseStack poseStack, int chatWidthBasedOnScale, double chatOpacityFactor, double textBackgroundOpacity, double chatSpacing, int tickCount) {
-        for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < this.trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
-            GuiMessage.Line visibleMessage = this.trimmedMessages.get(visibleMessageIndex + this.chatScrollbarPos);
+        for (int lineMessageIndex = 0; (lineMessageIndex + chatScrollbarPos) < this.trimmedMessages.size() && lineMessageIndex < this.getLinesPerPage(); lineMessageIndex++) {
+            GuiMessage.Line visibleMessage = this.trimmedMessages.get(lineMessageIndex + this.chatScrollbarPos);
             if (visibleMessage == null) {
                 continue;
             }
@@ -177,7 +181,7 @@ public abstract class ChatComponentMixin {
             }
 
             double chatMargin = -8.0 * (chatSpacing + 1.0) + 4.0 * chatSpacing;
-            int lineMaxHeight = -visibleMessageIndex * this.getLineHeight();
+            int lineMaxHeight = -lineMessageIndex * this.getLineHeight();
 
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
             float textPositionX = 0.0F;
@@ -187,9 +191,9 @@ public abstract class ChatComponentMixin {
             poseStack.translate(0.0, 0.0, 50.0);
 
             ChatComponent.fill(poseStack, -4, (lineMaxHeight - this.getLineHeight()), chatWidthBasedOnScale + 16, lineMaxHeight, backgroundOpacityColor << 24);
-            if (shouldRenderButtons(visibleMessage)) {
+            if (shouldRenderButtons(visibleMessage, lineMessageIndex)) {
                 textPositionX = 20.0F;
-                renderButtons(poseStack, (float) this.getScale(), visibleMessageIndex);
+                renderButtons(poseStack, (float) this.getScale(), lineMessageIndex);
             }
 
             this.minecraft.font.drawShadow(poseStack, visibleMessage.content(), textPositionX, (float) textPositionY, 0xFFFFFF + (chatOpacityColor << 24));
@@ -198,8 +202,14 @@ public abstract class ChatComponentMixin {
         }
     }
 
-    private boolean shouldRenderButtons(GuiMessage.Line line) {
-        return line.endOfEntry() && ClientChatHandler.isMessageOwner(line.addedTime());
+    private boolean shouldRenderButtons(GuiMessage.Line line, int lineMessageIndex) {
+        return line.endOfEntry() && isHoveringMessage(lineMessageIndex) && ClientChatHandler.isMessageOwner(line.addedTime());
+    }
+
+    private boolean isHoveringMessage(int lineMessageIndex) {
+        int modifiedScaledMouse = -MouseHelper.getScaledMouseY(this.getScale()) - 4;
+        int messageIndex = this.getMessageIndexAt(modifiedScaledMouse);
+        return messageIndex == lineMessageIndex;
     }
 
     private void renderButtons(PoseStack poseStack, float guiScale, int visibleMessageIndex) {
@@ -214,18 +224,20 @@ public abstract class ChatComponentMixin {
 
     @Inject(method = "handleChatQueueClicked(DD)Z", at = @At(target = "Lnet/minecraft/client/Minecraft;getChatListener()Lnet/minecraft/client/multiplayer/chat/ChatListener;", value = "INVOKE"))
     public void handleIconClick(double mouseX, double mouseY, CallbackInfoReturnable<Boolean> cir) {
-        for (int visibleMessageIndex = 0; (visibleMessageIndex + chatScrollbarPos) < trimmedMessages.size() && visibleMessageIndex < this.getLinesPerPage(); visibleMessageIndex++) {
-            GuiMessage.Line visibleMessage = this.trimmedMessages.get(visibleMessageIndex + this.chatScrollbarPos);
-            if (!ClientChatHandler.isMessageOwner(visibleMessage.addedTime())) {
+        for (int lineMessageIndex = 0; (lineMessageIndex + chatScrollbarPos) < trimmedMessages.size() && lineMessageIndex < this.getLinesPerPage(); lineMessageIndex++) {
+            GuiMessage.Line lineMessage = this.trimmedMessages.get(lineMessageIndex + this.chatScrollbarPos);
+            if (!shouldRenderButtons(lineMessage, lineMessageIndex)) {
                 continue;
             }
 
-            if (EDIT_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 16, this.getIconYBasedOnIndex(visibleMessageIndex))) {
-                EDIT_BUTTON.getOnPress().press(visibleMessage);
+            if (EDIT_BUTTON.isHovered(lineMessageIndex, (float) this.getScale(), 16, this.getIconYBasedOnIndex(lineMessageIndex))) {
+                EDIT_BUTTON.getOnPress().press(lineMessage);
+                break;
             }
 
-            if (DELETE_BUTTON.isHovered(visibleMessageIndex, (float) this.getScale(), 1, this.getIconYBasedOnIndex(visibleMessageIndex))) {
-                DELETE_BUTTON.getOnPress().press(visibleMessage);
+            if (DELETE_BUTTON.isHovered(lineMessageIndex, (float) this.getScale(), 1, this.getIconYBasedOnIndex(lineMessageIndex))) {
+                DELETE_BUTTON.getOnPress().press(lineMessage);
+                break;
             }
         }
     }

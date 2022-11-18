@@ -2,6 +2,7 @@ package dev.sleep.betterchat.client.gui.chat.widget;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.Reference;
+import dev.sleep.betterchat.client.MouseHelper;
 import dev.sleep.betterchat.client.gui.GuiUtil;
 import lombok.Getter;
 import net.minecraft.client.GuiMessage;
@@ -58,36 +59,12 @@ public class ChatButton {
     }
 
     private boolean isUnderXBox(float guiScale, int positionX) {
-        return this.getScaledMouseX(guiScale) >= (positionX - MARGIN_X) && this.getScaledMouseX(guiScale) < positionX + WIDTH;
-    }
-
-    public int getScaledMouseX(float guiScale) {
-        Minecraft minecraft = Minecraft.getInstance();
-
-        int mouseX = getMouseX(minecraft);
-        return (int) ((mouseX - 4.0) / guiScale);
-    }
-
-    private int getMouseX(Minecraft minecraft) {
-        return (int) (minecraft.mouseHandler.xpos() * (double) minecraft.getWindow().getGuiScaledWidth() / (double) minecraft.getWindow().getScreenWidth());
+        return MouseHelper.getScaledMouseX(guiScale) >= (positionX - MARGIN_X) && MouseHelper.getScaledMouseX(guiScale) < positionX + WIDTH;
     }
 
     private boolean isUnderYBox(int visibleMessageIndex, float guiScale, int positionY) {
         positionY = positionY + (MARGIN_Y * visibleMessageIndex);
-        return this.getScaledMouseY(guiScale) >= positionY && this.getScaledMouseY(guiScale) < positionY + HEIGHT;
-    }
-
-    public int getScaledMouseY(float guiScale) {
-        Minecraft minecraft = Minecraft.getInstance();
-
-        int mousePositionY = getMouseY(minecraft);
-        double scaledMouseY = (double) (minecraft.getWindow().getGuiScaledHeight() - mousePositionY) - 40.0;
-
-        return (int) -(scaledMouseY / (guiScale * minecraft.options.chatLineSpacing().get() + 1.0)) - 4;
-    }
-
-    private int getMouseY(Minecraft minecraft) {
-        return (int) (minecraft.mouseHandler.ypos() * (double) minecraft.getWindow().getGuiScaledHeight() / (double) minecraft.getWindow().getScreenHeight());
+        return MouseHelper.getScaledMouseY(guiScale) >= positionY && MouseHelper.getScaledMouseY(guiScale) < positionY + HEIGHT;
     }
 
     private void renderTooltip(PoseStack poseStack, float guiScale) {
@@ -96,7 +73,7 @@ public class ChatButton {
             return;
         }
 
-        minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
+        minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), MouseHelper.getScaledMouseX(guiScale), MouseHelper.getScaledMouseY(guiScale));
     }
 
     public interface OnPress {
