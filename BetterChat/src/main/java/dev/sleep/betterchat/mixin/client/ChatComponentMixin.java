@@ -121,8 +121,6 @@ public abstract class ChatComponentMixin {
     @Overwrite
     public void render(PoseStack poseStack, int tickCount) {
         ChatComponent chatComponent = (ChatComponent) (Object) this;
-        ClientChatHandler.reset(false);
-
         if (this.isChatHidden() || this.trimmedMessages.size() <= 0) {
             return;
         }
@@ -226,18 +224,18 @@ public abstract class ChatComponentMixin {
             int textPositionY = (int) ((double) lineMaxHeight + chatMargin);
 
             if (editButton.isHovered(visibleMessageIndex, (float) this.getScale(), 16, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                editButton.press(visibleMessage, this.allMessages);
+                editButton.press(this.allMessages, this.trimmedMessages, visibleMessage, visibleMessageIndex);
             }
 
             if (deleteButton.isHovered(visibleMessageIndex, (float) this.getScale(), 1, (calculateIconSpacing(visibleMessageIndex) + textPositionY) + 10)) {
-                deleteButton.press(visibleMessage, this.allMessages);
+                deleteButton.press(this.allMessages, this.trimmedMessages, visibleMessage, visibleMessageIndex);
             }
         }
     }
 
     @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
-    public void clearOwnerList(boolean clearSentMsgHistory, CallbackInfo ci) {
-        ClientChatHandler.reset(true);
+    public void clearMessageList(boolean clearSentMsgHistory, CallbackInfo ci) {
+        ClientChatHandler.clearMessageList();
     }
 
     @ModifyArg(at = @At(value = "INVOKE", target = "Lnet/minecraft/client/StringSplitter;componentStyleAtWidth(Lnet/minecraft/util/FormattedCharSequence;I)Lnet/minecraft/network/chat/Style;"),

@@ -13,6 +13,6 @@ public abstract class MinecraftMixin {
 
     @Inject(method = "setLevel(Lnet/minecraft/client/multiplayer/ClientLevel;)V", at = @At("HEAD"))
     public void setLevel(ClientLevel clientLevel, CallbackInfo ci) {
-        ClientChatHandler.reset(true);
+        ClientChatHandler.clearMessageList();
     }
 }

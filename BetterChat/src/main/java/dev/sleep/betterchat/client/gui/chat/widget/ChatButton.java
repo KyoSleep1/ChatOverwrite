@@ -99,12 +99,13 @@ public class ChatButton {
         minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), this.getScaledMouseX(guiScale), this.getScaledMouseY(guiScale));
     }
 
-    public void press(GuiMessage.Line visibleMessage, List<GuiMessage> messageList) {
+    public void press(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, GuiMessage.Line visibleMessage, int messageIndex) {
         ClientChatHandler.setLastFetchedAddedTime(visibleMessage.addedTime());
-        this.ON_PRESS.onPress(messageList, this);
+        this.ON_PRESS.onPress(allMessagesList, visibleMessagesList, this, messageIndex);
+        ClientChatHandler.setLastFetchedAddedTime(-40000);
     }
 
     public interface OnPress {
-        void onPress(List<GuiMessage> messageList, ChatButton chatButton);
+        void onPress(List<GuiMessage> allMessagesList, List<GuiMessage.Line> visibleMessagesList, ChatButton chatButton, int messageIndex);
     }
 }
