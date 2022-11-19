@@ -4,6 +4,7 @@
   "package": "dev.sleep.betterchat.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "server.chat.ServerGamePacketListenerImpMixin"
   ],
   "client": [
     "client.MinecraftAccessor",

@@ -20,14 +20,6 @@ public class MessageHandler {
         return MessageHandler.getCleanText(strippedMessage, 0);
     }
 
-    /**
-     * Overload for getFormattedContentText(GuiMessage message)
-     */
-    public static String getFormattedContentText(GuiMessage.Line lineMessage) {
-        GuiMessage message = MessageHandler.getMessageFromLine(lineMessage);
-        return MessageHandler.getFormattedContentText(message);
-    }
-
     public static GuiMessage getMessageFromLine(GuiMessage.Line messageLine) {
         List<GuiMessage> allMessagesList = ((ChatComponentAccessor) Minecraft.getInstance().gui.getChat()).getAllMessagesList();
 

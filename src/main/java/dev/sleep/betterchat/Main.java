@@ -1,6 +1,7 @@
 package dev.sleep.betterchat;
 
 import dev.sleep.betterchat.common.network.NetworkManager;
+import dev.sleep.betterchat.server.event.EventHandler;
 import lombok.Getter;
 import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
@@ -13,6 +14,15 @@ public class Main implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        this.registerNetwork();
+        this.registerEvents();
+    }
+
+    private void registerNetwork(){
         NetworkManager.registerServerPackets();
+    }
+
+    private void registerEvents(){
+        EventHandler.registerAll();
     }
 }

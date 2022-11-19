@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import dev.sleep.betterchat.client.MouseHelper;
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
 import dev.sleep.betterchat.client.gui.chat.widget.ChatButton;
+import dev.sleep.betterchat.common.chat.MessageHandler;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
@@ -80,12 +81,14 @@ public abstract class ChatComponentMixin {
     @Shadow
     protected abstract int getMessageIndexAt(double chatY);
 
-    private static final ChatButton EDIT_BUTTON = new ChatButton("TEST 1", 1, 8, 7, 6, 2, 18,
-            18, 18, 12, 12, ClientChatHandler::editMessage);
+    /**
+     * Don't ask me why, but, buttons crash if they are not static
+     **/
+    private static final ChatButton EDIT_BUTTON = new ChatButton(1, 8, 7, 6, 2, 18,
+            18, 18, 12, 12, ClientChatHandler.INSTANCE::editMessage);
 
-
-    private static final ChatButton DELETE_BUTTON = new ChatButton("TEST 2", 5, 8, 3, 6, 2, 2,
-            19, 2, 11, 12, ClientChatHandler::deleteMessage);
+    private static final ChatButton DELETE_BUTTON = new ChatButton(5, 8, 3, 6, 2, 2,
+            19, 2, 11, 12, ClientChatHandler.INSTANCE::deleteMessage);
 
     /**
      * @author KyoSleep
@@ -130,7 +133,7 @@ public abstract class ChatComponentMixin {
 
     @Inject(method = "clearMessages(Z)V", at = @At("HEAD"))
     public void clearMessageList(boolean clearSentMsgHistory, CallbackInfo ci) {
-        ClientChatHandler.clearMessageList();
+        ClientChatHandler.INSTANCE.clearPlayerEditableMessagesList();
     }
 
     /**
@@ -203,7 +206,7 @@ public abstract class ChatComponentMixin {
     }
 
     private boolean shouldRenderButtons(GuiMessage.Line line, int lineMessageIndex) {
-        return line.endOfEntry() && isHoveringMessage(lineMessageIndex) && ClientChatHandler.isMessageOwner(line.addedTime());
+        return line.endOfEntry() && isHoveringMessage(lineMessageIndex) && ClientChatHandler.INSTANCE.isMessageOwner(line.addedTime());
     }
 
     private boolean isHoveringMessage(int lineMessageIndex) {
@@ -231,15 +234,20 @@ public abstract class ChatComponentMixin {
             }
 
             if (EDIT_BUTTON.isHovered(lineMessageIndex, (float) this.getScale(), 16, this.getIconYBasedOnIndex(lineMessageIndex))) {
-                EDIT_BUTTON.getOnPress().press(lineMessage);
+                clickAndGetMessage(lineMessage, EDIT_BUTTON);
                 break;
             }
 
             if (DELETE_BUTTON.isHovered(lineMessageIndex, (float) this.getScale(), 1, this.getIconYBasedOnIndex(lineMessageIndex))) {
-                DELETE_BUTTON.getOnPress().press(lineMessage);
+                clickAndGetMessage(lineMessage, DELETE_BUTTON);
                 break;
             }
         }
+    }
+
+    private void clickAndGetMessage(GuiMessage.Line lineMessage, ChatButton chatButton) {
+        GuiMessage message = MessageHandler.getMessageFromLine(lineMessage);
+        chatButton.getOnPress().press(message);
     }
 
     private int getIconYBasedOnIndex(int messageIndex) {

@@ -1,6 +1,7 @@
 package dev.sleep.betterchat.mixin.client.chat;
 
 import dev.sleep.betterchat.client.chat.ClientChatHandler;
+import dev.sleep.betterchat.common.chat.EditableChatMessage;
 import net.minecraft.Util;
 import net.minecraft.client.GuiMessageTag;
 import net.minecraft.client.Minecraft;
@@ -90,6 +91,6 @@ public abstract class ChatListenerMixin {
             return;
         }
 
-        ClientChatHandler.addToEditableMessageList(chatMessage, addedTime);
+        ClientChatHandler.INSTANCE.addToEditableMessageList(new EditableChatMessage(chatMessage, addedTime));
     }
 }

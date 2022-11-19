@@ -6,13 +6,9 @@ import dev.sleep.betterchat.client.MouseHelper;
 import dev.sleep.betterchat.client.gui.GuiUtil;
 import lombok.Getter;
 import net.minecraft.client.GuiMessage;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
 public class ChatButton {
-
-    private final String TOOL_TIP_TEXT;
 
     private final static ResourceLocation CHAT_BUTTON_LOCATION = new ResourceLocation(Reference.MODID, "textures/guis/chat/message_icons.png");
     private final static int TEXTURE_SIZE = 32;
@@ -23,9 +19,7 @@ public class ChatButton {
     private final int WIDTH, HEIGHT, MARGIN_X, MARGIN_Y, DEFAULT_U, DEFAULT_V, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT;
 
 
-    public ChatButton(String tooltipText, int width, int height, int marginX, int marginY, int defaultU, int defaultV, int hoverU, int hoverV, int textureWidth, int textureHeight, ChatButton.OnPress onPress) {
-        this.TOOL_TIP_TEXT = tooltipText;
-
+    public ChatButton(int width, int height, int marginX, int marginY, int defaultU, int defaultV, int hoverU, int hoverV, int textureWidth, int textureHeight, ChatButton.OnPress onPress) {
         this.WIDTH = width;
         this.HEIGHT = height;
 
@@ -51,7 +45,6 @@ public class ChatButton {
         }
 
         GuiUtil.drawTexture(CHAT_BUTTON_LOCATION, poseStack, positionX, positionY, HOVER_U, HOVER_V, TEXTURE_WIDTH, TEXTURE_HEIGHT, TEXTURE_SIZE);
-        this.renderTooltip(poseStack, guiScale);
     }
 
     public boolean isHovered(int visibleMessageIndex, float guiScale, int positionX, int positionY) {
@@ -67,16 +60,7 @@ public class ChatButton {
         return MouseHelper.getScaledMouseY(guiScale) >= positionY && MouseHelper.getScaledMouseY(guiScale) < positionY + HEIGHT;
     }
 
-    private void renderTooltip(PoseStack poseStack, float guiScale) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen == null) {
-            return;
-        }
-
-        minecraft.screen.renderTooltip(poseStack, Component.literal(TOOL_TIP_TEXT), MouseHelper.getScaledMouseX(guiScale), MouseHelper.getScaledMouseY(guiScale));
-    }
-
     public interface OnPress {
-        void press(GuiMessage.Line messageLine);
+        void press(GuiMessage message);
     }
 }
