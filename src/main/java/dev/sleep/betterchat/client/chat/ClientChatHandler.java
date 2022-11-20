@@ -7,10 +7,12 @@ import dev.sleep.betterchat.common.network.NetworkManager;
 import dev.sleep.betterchat.common.network.packet.PacketNotifyMessageDelete;
 import dev.sleep.betterchat.mixin.client.MinecraftAccessor;
 import dev.sleep.betterchat.mixin.client.chat.ChatComponentAccessor;
+import lombok.Getter;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.GuiMessage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.network.chat.Component;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,6 +23,9 @@ public class ClientChatHandler extends AbstractChatHandler {
 
     public static final ClientChatHandler INSTANCE = new ClientChatHandler();
 
+    @Getter
+    public EditableChatMessage messageCurrentlyEditing = null;
+
     /**
      * Overload for the default implementation AbstractChatHandler#isMessageOwner
      **/
@@ -29,18 +34,46 @@ public class ClientChatHandler extends AbstractChatHandler {
         return this.isMessageOwner(chatMessage, Minecraft.getInstance().player);
     }
 
-    public void editMessage(GuiMessage message) {
+    public void editMessageAndNotify(GuiMessage message) {
+        EditableChatMessage chatMessage = ClientChatHandler.INSTANCE.getEditableMessageByAddedTime(message.addedTime());
+
         String textFromEditedButton = MessageHandler.getFormattedContentText(message);
         ClientChatHandler.openChat(textFromEditedButton);
+
+        this.messageCurrentlyEditing = chatMessage;
     }
 
-    public void editMessage(GuiMessage message, boolean notifyOthers) {
-        EditableChatMessage chatMessage = this.getEditableMessageByAddedTime(message.addedTime());
-        String textFromEditedButton = MessageHandler.getFormattedContentText(message);
-        ClientChatHandler.openChat(textFromEditedButton);
+    public void editMessage(EditableChatMessage editableChatMessage, Component content) {
+        ChatComponent chatComponent = Minecraft.getInstance().gui.getChat();
+
+        List<GuiMessage> allMessagesList = ((ChatComponentAccessor) chatComponent).getAllMessagesList();
+        List<GuiMessage.Line> trimmedMessagesList = ((ChatComponentAccessor) chatComponent).getTrimmedMessagesList();
+
+        GuiMessage editedGuiMessage = this.buildEditedGuiMessage(editableChatMessage, content);
+        GuiMessage oldGuiMessage = this.getGMessageByEMessage(editableChatMessage);
+
+        for (int i = 0; i < allMessagesList.size(); i++) {
+            GuiMessage fetchedGuiMessage = allMessagesList.get(i);
+
+            if(fetchedGuiMessage.addedTime() == oldGuiMessage.addedTime()){
+                allMessagesList.set(i, editedGuiMessage);
+            }
+        }
+
+        trimmedMessagesList.clear();
+        for (int i = allMessagesList.size() - 1; i >= 0; --i) {
+            GuiMessage guiMessage = allMessagesList.get(i);
+            ((ChatComponentAccessor) chatComponent).addMessage(guiMessage.content(), guiMessage.headerSignature(), guiMessage.addedTime(), guiMessage.tag(), true);
+        }
+
+        this.editMessage(editableChatMessage);
     }
 
-    public void deleteMessage(GuiMessage message) {
+    public boolean isEditingMessage() {
+        return this.messageCurrentlyEditing != null;
+    }
+
+    public void deleteMessageAndNotify(GuiMessage message) {
         ClientChatHandler.openChat("");
         EditableChatMessage chatMessage = this.getEditableMessageByAddedTime(message.addedTime());
 
@@ -86,6 +119,11 @@ public class ClientChatHandler extends AbstractChatHandler {
         for (GuiMessage.Line trimmedMesageToRemove : trimmedMessagesToRemove) {
             trimmedMessagesList.remove(trimmedMesageToRemove);
         }
+    }
+
+    private GuiMessage buildEditedGuiMessage(EditableChatMessage editableChatMessage, Component newContent) {
+        GuiMessage oldGuiMessage = getGMessageByEMessage(editableChatMessage);
+        return new GuiMessage(oldGuiMessage.addedTime(), newContent, oldGuiMessage.headerSignature(), oldGuiMessage.tag());
     }
 
     private EditableChatMessage getEditableMessageByAddedTime(int addedTime) {

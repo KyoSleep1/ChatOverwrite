@@ -16,26 +16,32 @@ public abstract class AbstractChatHandler {
         PLAYERS_MESSAGES_LIST.put(signerUUID, timeStamp, editableChatMessage);
     }
 
-    public void removeMessageFromUUID(UUID uuidToDelete){
+    public void removeMessageFromUUID(UUID uuidToDelete) {
         PLAYERS_MESSAGES_LIST.row(uuidToDelete).clear();
     }
 
-    public void deleteMessage(EditableChatMessage chatMessage) {
-        this.removeFromAllLists(chatMessage);
+    public void deleteMessage(EditableChatMessage editableChatMessage) {
+        this.removeFromAllLists(editableChatMessage);
     }
 
-    public abstract void removeFromAllLists(EditableChatMessage chatMessage);
+    public void editMessage(EditableChatMessage editableChatMessage) {
+        UUID signerUUID = editableChatMessage.getChatMessage().signer().profileId();
+        Instant timeStamp = editableChatMessage.getChatMessage().timeStamp();
+        PLAYERS_MESSAGES_LIST.row(signerUUID).replace(timeStamp, editableChatMessage);
+    }
+
+    public abstract void removeFromAllLists(EditableChatMessage editableChatMessage);
 
     public void clearPlayerEditableMessagesList() {
         PLAYERS_MESSAGES_LIST.clear();
     }
 
-    public boolean isMessageOwner(EditableChatMessage chatMessage, Player sender) {
-        if (chatMessage == null) {
+    public boolean isMessageOwner(EditableChatMessage editableChatMessage, Player sender) {
+        if (editableChatMessage == null) {
             return false;
         }
 
-        UUID playerUUID = chatMessage.getChatMessage().signer().profileId();
+        UUID playerUUID = editableChatMessage.getChatMessage().signer().profileId();
         return sender.getUUID().equals(playerUUID);
     }
 
@@ -44,7 +50,7 @@ public abstract class AbstractChatHandler {
             long messageEpochSecond = chatMessage.getChatMessage().timeStamp().getEpochSecond();
             long timeStampEpochSecond = timeStamp.getEpochSecond();
 
-            if(messageEpochSecond != timeStampEpochSecond){
+            if (messageEpochSecond != timeStampEpochSecond) {
                 continue;
             }
 

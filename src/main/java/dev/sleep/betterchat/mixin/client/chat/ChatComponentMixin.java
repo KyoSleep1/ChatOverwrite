@@ -85,10 +85,10 @@ public abstract class ChatComponentMixin {
      * Don't ask me why, but, buttons crash if they are not static
      **/
     private static final ChatButton EDIT_BUTTON = new ChatButton(1, 8, 7, 6, 2, 18,
-            18, 18, 12, 12, ClientChatHandler.INSTANCE::editMessage);
+            18, 18, 12, 12, ClientChatHandler.INSTANCE::editMessageAndNotify);
 
     private static final ChatButton DELETE_BUTTON = new ChatButton(5, 8, 3, 6, 2, 2,
-            19, 2, 11, 12, ClientChatHandler.INSTANCE::deleteMessage);
+            19, 2, 11, 12, ClientChatHandler.INSTANCE::deleteMessageAndNotify);
 
     /**
      * @author KyoSleep
@@ -96,7 +96,7 @@ public abstract class ChatComponentMixin {
      * this helps us to render icon in the correct line.
      */
     @Overwrite
-    private void addMessage(Component chatComponent, @Nullable MessageSignature headerSignature, int addedTime, @Nullable GuiMessageTag tag, boolean onlyTrim) {
+    public void addMessage(Component chatComponent, @Nullable MessageSignature headerSignature, int addedTime, @Nullable GuiMessageTag tag, boolean onlyTrim) {
         this.logChatMessage(chatComponent, tag);
 
         int i = Mth.floor((double) this.getWidth() / this.getScale());
