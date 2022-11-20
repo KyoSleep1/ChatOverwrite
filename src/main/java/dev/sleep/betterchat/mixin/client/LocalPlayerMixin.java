@@ -33,7 +33,7 @@ public abstract class LocalPlayerMixin {
 
     /**
      * @author KyoSleep
-     * @reason TODO
+     * @reason Used to modify the normal Message sending in order to support message editing
      */
     @Overwrite
     private void sendChat(String plain, @Nullable Component decorated) {
@@ -48,7 +48,6 @@ public abstract class LocalPlayerMixin {
         }
 
         EditableChatMessage editedChatMessage = ClientChatHandler.INSTANCE.getMessageCurrentlyEditing();
-        ClientChatHandler.INSTANCE.messageCurrentlyEditing = null;
         ClientPlayNetworking.send(NetworkManager.EDITED_MESSAGE_PACKET_ID, PacketNotifyMessageEdited.createWritedBuf(editedChatMessage, chatMessageContent));
     }
 }

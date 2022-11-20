@@ -23,7 +23,6 @@ public class PacketMessageEdited {
         FriendlyByteBuf buf = PacketByteBufs.create();
         buf.writeInstant(chatMessage.getChatMessage().timeStamp());
         buf.writeComponent(content);
-
         return buf;
     }
 

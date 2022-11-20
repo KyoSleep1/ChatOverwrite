@@ -37,8 +37,8 @@ public class ClientChatHandler extends AbstractChatHandler {
     public void editMessageAndNotify(GuiMessage message) {
         EditableChatMessage chatMessage = ClientChatHandler.INSTANCE.getEditableMessageByAddedTime(message.addedTime());
 
-        String textFromEditedButton = MessageHandler.getFormattedContentText(message);
-        ClientChatHandler.openChat(textFromEditedButton);
+        String textFromEditedMessage = MessageHandler.getFormattedContentText(message);
+        this.openChat(textFromEditedMessage);
 
         this.messageCurrentlyEditing = chatMessage;
     }
@@ -74,8 +74,8 @@ public class ClientChatHandler extends AbstractChatHandler {
     }
 
     public void deleteMessageAndNotify(GuiMessage message) {
-        ClientChatHandler.openChat("");
         EditableChatMessage chatMessage = this.getEditableMessageByAddedTime(message.addedTime());
+        this.openChat("");
 
         if (chatMessage == null) {
             return;
@@ -161,7 +161,7 @@ public class ClientChatHandler extends AbstractChatHandler {
     }
 
     //openChat
-    private static void openChat(String message) {
+    public void openChat(String message) {
         //opens the chat
         ((MinecraftAccessor) Minecraft.getInstance()).openChat(message); //chat open
         //end of open chat
