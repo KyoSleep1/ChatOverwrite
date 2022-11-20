@@ -12,7 +12,7 @@
     "discord": "KyoSleep#6920"
   },
 
-  "license": "GNU",
+  "license": "MIT",
   "icon": "assets/chatoverwrite/icon.png",
 
   "environment": "*",
